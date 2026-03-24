@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
-<title>Game Day</title>
+<title>GameDay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -72,7 +72,7 @@
   /* ── HEADER ── */
   header { background: var(--header-bg); color: var(--header-text); padding: 0 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 16px var(--shadow); }
   .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.9rem 0; flex-wrap: wrap; }
-  .site-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1; color: var(--header-text); }
+  .site-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1; color: var(--header-text); cursor: pointer; user-select: none; }
   .site-title span { color: var(--gold); }
   .header-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 
@@ -222,7 +222,7 @@
 
 <header>
   <div class="header-inner">
-    <div class="site-title">⚾⚽ Family <span>Game Day</span></div>
+    <div class="site-title" onclick="resetToHome()">⚾⚽ Family <span>GameDay</span></div>
     <div class="header-controls">
       <select id="seasonSelect"></select>
       <div class="view-toggle">
@@ -431,6 +431,14 @@ function toggleFilter(set, val, btn, isSport) {
 // ═══════════════════════════════════════
 //  VIEW / RENDER
 // ═══════════════════════════════════════
+function resetToHome() {
+  currentView = 'calendar';
+  activeKids.clear(); activeSports.clear();
+  setInitialMonth();
+  document.querySelectorAll('.view-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  buildFilters(); render();
+}
+
 function setView(v) {
   currentView = v;
   document.querySelectorAll('.view-btn').forEach((b, i) =>

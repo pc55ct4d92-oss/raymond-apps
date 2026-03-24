@@ -189,10 +189,30 @@
   .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text); }
   .empty-state p { font-size: 0.9rem; }
 
+  /* ── CALENDAR DOTS ── */
+  .cal-dots { display: none; }
+  .cal-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .cal-dot.soccer   { background: var(--grass); }
+  .cal-dot.baseball { background: var(--diamond); }
+  .cal-dot.playoff  { background: var(--playoff); }
+
+  /* ── BOTTOM SHEET ── */
+  .sheet-overlay { position: fixed; inset: 0; background: rgba(10,20,50,0.5); backdrop-filter: blur(4px); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .sheet-overlay.open { opacity: 1; pointer-events: all; }
+  .bottom-sheet { position: absolute; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-radius: 16px 16px 0 0; padding: 0 1rem 2rem; max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); border: 1.5px solid var(--border); border-bottom: none; }
+  .sheet-overlay.open .bottom-sheet { transform: translateY(0); }
+  .sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+  .sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 0 0.65rem; border-bottom: 1.5px solid var(--border); margin-bottom: 0.75rem; }
+  .sheet-date { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  .sheet-close { background: var(--bg-secondary); border: 1px solid var(--border); width: 28px; height: 28px; border-radius: 50%; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-mid); flex-shrink: 0; }
+
   /* ── MOBILE ── */
   @media (max-width: 640px) {
-    .cal-cell { min-height: 80px; }
-    .cal-event { display: block; font-size: 0.62rem; }
+    .cal-cell { min-height: 60px; }
+    .cal-cell.has-games { cursor: pointer; }
+    .cal-event { display: none; }
+    .more-events { display: none; }
+    .cal-dots { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
     .special-label { font-size: 0.58rem; }
     .site-title { font-size: 1.2rem; }
   }
@@ -218,6 +238,17 @@
 </div>
 
 <main id="main"></main>
+
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeDaySheet(event)">
+  <div class="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-date" id="sheetDate"></span>
+      <button class="sheet-close" onclick="closeDaySheet()">✕</button>
+    </div>
+    <div id="sheetGames"></div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal">
@@ -462,20 +493,27 @@ function renderCalendar() {
     let cellCls = 'cal-cell';
     if (ds === todayStr) cellCls += ' today';
     if (isBreak)         cellCls += ' spring-break';
+    if (dg.length > 0)   cellCls += ' has-games';
 
-    h += `<div class="${cellCls}"><span class="day-num">${d}</span>`;
+    const cellClick = dg.length > 0 ? ` onclick="handleCellClick('${ds}')"` : '';
+    h += `<div class="${cellCls}"${cellClick}><span class="day-num">${d}</span>`;
 
     if (sp) {
       const icon = isHoliday ? '🐣 ' : '';
       h += `<div class="special-label ${sp.type}">${icon}${sp.label}</div>`;
     }
 
+    if (dg.length > 0) {
+      const dots = dg.map(g => `<span class="cal-dot ${g.playoff ? 'playoff' : g.sport}"></span>`).join('');
+      h += `<div class="cal-dots">${dots}</div>`;
+    }
+
     dg.slice(0, 2).forEach(g => {
       const cls = g.playoff ? 'playoff' : g.sport;
-      h += `<div class="cal-event ${cls}" onclick='openModal(${JSON.stringify(JSON.stringify(g))})'>${g.playoff ? '🏆 ' : ''}${formatTime(g.time)} ${g.kid}</div>`;
+      h += `<div class="cal-event ${cls}" onclick='event.stopPropagation();openModal(${JSON.stringify(JSON.stringify(g))})'>${g.playoff ? '🏆 ' : ''}${formatTime(g.time)} ${g.kid}</div>`;
     });
 
-    if (dg.length > 2) h += `<div class="more-events" onclick="setView('list')">+${dg.length - 2} more</div>`;
+    if (dg.length > 2) h += `<div class="more-events" onclick="event.stopPropagation();setView('list')">+${dg.length - 2} more</div>`;
     h += `</div>`;
   }
 
@@ -617,7 +655,42 @@ function closeModal(e) {
   document.body.style.overflow = '';
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal({}); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal({}); closeDaySheet(); } });
+
+// ═══════════════════════════════════════
+//  DAY BOTTOM SHEET (mobile)
+// ═══════════════════════════════════════
+function handleCellClick(ds) {
+  if (window.innerWidth > 640) return;
+  const games = getGames().filter(g => g.date === ds);
+  if (!games.length) return;
+  const d = new Date(ds + 'T12:00:00');
+  const dateStr = d.toLocaleString('default', { weekday: 'long', month: 'long', day: 'numeric' });
+  document.getElementById('sheetDate').textContent = dateStr;
+  document.getElementById('sheetGames').innerHTML = games.map(g => {
+    const icon    = g.sport === 'soccer' ? '⚽' : g.sport === 'baseball' ? '⚾' : '🎭';
+    const cardCls = g.playoff ? `${g.sport} playoff` : g.sport;
+    return `<div class="game-card ${cardCls}" onclick='closeDaySheet();openModal(${JSON.stringify(JSON.stringify(g))})'>
+      <div class="sport-icon">${g.playoff ? '🏆' : icon}</div>
+      <div class="game-info">
+        <div class="game-who"><strong>${g.kid}</strong>${g.opponent ? ` <span class="vs">vs ${g.opponent}</span>` : ''}</div>
+        <div class="game-meta">
+          <span>📍 ${g.location}</span>
+          ${g.playoff ? '<span class="playoff-badge">🏆 Playoff</span>' : ''}
+        </div>
+      </div>
+      <div class="game-time-badge">${formatTime(g.time)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDaySheet(e) {
+  if (e && e.target !== document.getElementById('sheetOverlay')) return;
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
 function formatTime(t) {
   const [h, m] = t.split(':').map(Number);

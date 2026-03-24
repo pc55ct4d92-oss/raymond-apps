@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Day</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── LIGHT MODE ── */
+  :root {
+    --bg:           #ffffff;
+    --bg-secondary: #f0f4f9;
+    --bg-card:      #ffffff;
+    --bg-empty:     #f7f9fc;
+    --bg-today:     #eef3fb;
+    --text:         #0f1f3d;
+    --text-mid:     #3d5278;
+    --text-faint:   #7a90b0;
+    --border:       #d5e0f0;
+    --header-bg:    #0f2d5e;
+    --header-text:  #ffffff;
+    --grid-gap:     #c8d8ed;
+    --shadow:       rgba(15,45,94,0.1);
+    --accent:       #1a56db;
+    --accent-pale:  #dbeafe;
+    --grass:        #0d7a3e;
+    --grass-pale:   #d1fae5;
+    --diamond:      #c0392b;
+    --diamond-pale: #fee2e2;
+    --gold:         #f59e0b;
+    --playoff:      #7c3aed;
+    --playoff-pale: #ede9fe;
+    --event:        #b45309;
+    --event-pale:   #fef3c7;
+  }
+
+  /* ── DARK MODE ── */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:           #1a1a1a;
+      --bg-secondary: #222222;
+      --bg-card:      #2a2a2a;
+      --bg-empty:     #1f1f1f;
+      --bg-today:     #2a3040;
+      --text:         #f0f0f0;
+      --text-mid:     #b0b8c8;
+      --text-faint:   #707888;
+      --border:       #3a3a3a;
+      --header-bg:    #0f2d5e;
+      --header-text:  #ffffff;
+      --grid-gap:     #111111;
+      --shadow:       rgba(0,0,0,0.5);
+      --accent:       #5b9bf8;
+      --accent-pale:  #1a2a42;
+      --grass:        #3dbe6c;
+      --grass-pale:   #0f2a1a;
+      --diamond:      #f07060;
+      --diamond-pale: #2e1210;
+      --gold:         #fbbf24;
+      --playoff:      #b08af8;
+      --playoff-pale: #241540;
+      --event:        #fbbf24;
+      --event-pale:   #2d1f00;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header { background: var(--header-bg); color: var(--header-text); padding: 0 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 16px var(--shadow); }
+  .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.9rem 0; flex-wrap: wrap; }
+  .site-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; line-height: 1; color: var(--header-text); }
+  .site-title span { color: var(--gold); }
+  .header-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+
+  select { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25); color: var(--header-text); font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; padding: 0.4rem 2rem 0.4rem 0.75rem; border-radius: 6px; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ffffff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.6rem center; }
+  select option { background: var(--header-bg); color: var(--header-text); }
+
+  .view-toggle { display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 3px; gap: 2px; }
+  .view-btn { background: none; border: none; color: rgba(255,255,255,0.5); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.8rem; border-radius: 6px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; }
+  .view-btn.active { background: #ffffff; color: var(--header-bg); }
+
+  /* ── FILTERS ── */
+  .filters-bar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0.6rem 1.5rem; }
+  .filters-bar-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
+  .filter-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); margin-right: 0.2rem; flex-shrink: 0; }
+  .filter-sep { width: 1px; height: 18px; background: var(--border); margin: 0 0.2rem; flex-shrink: 0; }
+  .chip { background: var(--bg-card); border: 1.5px solid var(--border); color: var(--text-mid); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; padding: 0.28rem 0.7rem; border-radius: 20px; cursor: pointer; transition: all 0.15s; }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.soccer.active   { background: var(--grass);   border-color: var(--grass); }
+  .chip.baseball.active { background: var(--diamond); border-color: var(--diamond); }
+  .chip.event.active    { background: var(--event);   border-color: var(--event); color: #fff; }
+  .reset-btn { background: none; border: 1.5px solid transparent; color: var(--text-faint); font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 600; padding: 0.28rem 0.6rem; border-radius: 20px; cursor: pointer; transition: all 0.15s; margin-left: 0.2rem; display: none; align-items: center; gap: 0.3rem; }
+  .reset-btn.visible { display: inline-flex; border-color: var(--border); color: var(--text-mid); }
+  .reset-btn.visible:hover { border-color: var(--diamond); color: var(--diamond); }
+
+  /* ── MAIN ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 1.25rem; padding: 0.65rem 1rem; background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px; align-items: center; }
+  .legend-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint); }
+  .legend-item  { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--text-mid); }
+  .legend-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-dot.soccer   { background: var(--grass); }
+  .legend-dot.baseball { background: var(--diamond); }
+  .legend-dot.playoff  { background: var(--playoff); }
+  .legend-dot.event    { background: var(--event); }
+
+  /* ── CALENDAR ── */
+  .month-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; margin-top: 1.5rem; }
+  .month-header:first-child { margin-top: 0; }
+  .month-name { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--text); }
+  .nav-btns { display: flex; gap: 0.5rem; }
+  .nav-btn { background: var(--bg-card); border: 1.5px solid var(--border); color: var(--text-mid); font-size: 1.1rem; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: var(--grid-gap); border: 1.5px solid var(--grid-gap); border-radius: 12px; overflow: hidden; }
+  .cal-day-name { background: var(--header-bg); color: var(--header-text); text-align: center; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.55rem 0; }
+  .cal-cell { background: var(--bg-card); min-height: 92px; padding: 0.4rem; position: relative; }
+  .cal-cell.empty       { background: var(--bg-empty); }
+  .cal-cell.today       { background: var(--bg-today); }
+  .cal-cell.today .day-num { color: var(--accent); font-weight: 700; }
+  .cal-cell.spring-break { background: #e8f4fd; }
+  @media (prefers-color-scheme: dark) { .cal-cell.spring-break { background: #0f1f30; } }
+  .day-num { font-size: 0.78rem; font-weight: 600; color: var(--text-faint); margin-bottom: 3px; display: block; }
+
+  .cal-event { font-size: 0.67rem; font-weight: 600; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; line-height: 1.35; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.15s; }
+  .cal-event:hover { opacity: 0.75; }
+  .cal-event.soccer   { background: var(--grass-pale);   color: var(--grass); }
+  .cal-event.baseball { background: var(--diamond-pale); color: var(--diamond); }
+  .cal-event.playoff  { background: var(--playoff-pale); color: var(--playoff); }
+  .cal-event.event    { background: var(--event-pale);   color: var(--event); }
+
+  .special-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 4px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .special-label.break   { color: var(--accent); background: var(--accent-pale); }
+  .special-label.holiday { color: var(--event); background: var(--event-pale); }
+
+  .more-events { font-size: 0.65rem; font-weight: 600; color: var(--text-faint); padding: 1px 4px; cursor: pointer; }
+  .more-events:hover { color: var(--accent); text-decoration: underline; }
+
+  /* ── LIST VIEW ── */
+  .past-toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--text-faint); background: var(--bg-secondary); border: 1.5px solid var(--border); border-radius: 8px; padding: 0.5rem 0.85rem; margin-bottom: 1rem; cursor: pointer; transition: color 0.15s, border-color 0.15s; user-select: none; }
+  .past-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .list-section { margin-bottom: 2rem; }
+  .list-date-header { font-size: 0.82rem; font-weight: 700; color: var(--text-faint); padding: 0.45rem 0 0.4rem; border-bottom: 1.5px solid var(--border); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .list-date-header .weekday { color: var(--text); font-size: 1rem; text-transform: none; letter-spacing: 0; font-family: 'Playfair Display', serif; }
+
+  .game-card { background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; position: relative; overflow: hidden; }
+  .game-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px var(--shadow); }
+  .game-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 2px 0 0 2px; }
+  .game-card.soccer::before   { background: var(--grass); }
+  .game-card.baseball::before { background: var(--diamond); }
+  .game-card.playoff::before  { background: var(--playoff); }
+  .game-card.event::before    { background: var(--event); }
+
+  .sport-icon { font-size: 1.4rem; flex-shrink: 0; width: 36px; text-align: center; }
+  .game-info  { flex: 1; min-width: 0; }
+  .game-who   { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+  .game-who .vs { color: var(--text-faint); font-weight: 400; font-size: 0.85rem; }
+  .game-meta  { font-size: 0.8rem; color: var(--text-mid); margin-top: 3px; display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+  .game-time-badge { font-size: 0.82rem; font-weight: 700; color: var(--text-mid); white-space: nowrap; text-align: right; flex-shrink: 0; }
+  .playoff-badge { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 6px; border-radius: 4px; background: var(--playoff-pale); color: var(--playoff); display: inline-flex; align-items: center; gap: 3px; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(10,20,50,0.6); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--bg-card); border-radius: 16px; padding: 1.75rem; max-width: 380px; width: 100%; box-shadow: 0 24px 64px rgba(10,20,50,0.25); transform: translateY(14px); transition: transform 0.2s; position: relative; border: 1.5px solid var(--border); }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-sport-bar { height: 5px; border-radius: 3px; margin-bottom: 1.25rem; }
+  .modal-sport-bar.soccer   { background: var(--grass); }
+  .modal-sport-bar.baseball { background: var(--diamond); }
+  .modal-sport-bar.playoff  { background: var(--playoff); }
+  .modal-sport-bar.event    { background: var(--event); }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; margin-bottom: 0.2rem; color: var(--text); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .modal-sport-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); margin-bottom: 1rem; }
+  .modal-detail { display: flex; gap: 0.65rem; align-items: flex-start; margin-bottom: 0.65rem; font-size: 0.9rem; color: var(--text); }
+  .modal-detail .icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: var(--bg-secondary); border: 1px solid var(--border); width: 28px; height: 28px; border-radius: 50%; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-mid); transition: background 0.15s; }
+  .modal-close:hover { background: var(--accent-pale); color: var(--accent); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-mid); }
+  .empty-state .big-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text); }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 640px) {
+    .cal-cell { min-height: 80px; }
+    .cal-event { display: block; font-size: 0.62rem; }
+    .special-label { font-size: 0.58rem; }
+    .site-title { font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="site-title">⚾⚽ Family <span>Game Day</span></div>
+    <div class="header-controls">
+      <select id="seasonSelect"></select>
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="setView('calendar')">Calendar</button>
+        <button class="view-btn" onclick="setView('list')">List</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="filters-bar">
+  <div class="filters-bar-inner" id="filtersBar"></div>
+</div>
+
+<main id="main"></main>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-sport-bar" id="modalBar"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-sport-label" id="modalSport"></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  DATA
+//  kid    – display name shown on calendar/list
+//  kids   – optional array for individual filter chips (multi-kid entries)
+//  sport  – "soccer" | "baseball" | "event"
+//  date   – "YYYY-MM-DD"
+//  time   – "HH:MM" (24-hr)
+//  opponent – opponent name (empty string if unknown)
+//  location – field/park
+//  playoff  – true for playoff games (omit for regular season)
+// ════════════════════════════════════════════════════════════════
+const SEASONS = {
+  "Spring 2026": [
+    // ── Shea & Lucy (Storm – U10 Girls Soccer) ──
+    { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-03-19", time:"18:00", opponent:"Comets",  location:"OVP - B3" },
+    { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-03-26", time:"18:00", opponent:"Aces",    location:"OVP - B1" },
+    { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-03-28", time:"10:00", opponent:"Shock",   location:"OVP - B1" },
+    { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-04-02", time:"18:00", opponent:"Dream",   location:"OVP - B1" },
+    { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-04-16", time:"19:15", opponent:"Mystics", location:"OVP - B1" },
+    { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-04-23", time:"19:15", opponent:"Comets",  location:"OVP - B1" },
+    { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-04-30", time:"18:00", opponent:"Aces",    location:"OVP - B3" },
+    // ── Judd (Baseball) ──
+    { kid:"Judd", sport:"baseball", date:"2026-03-25", time:"17:45", opponent:"", location:"OVP"    },
+    { kid:"Judd", sport:"baseball", date:"2026-03-28", time:"10:00", opponent:"", location:"Bogart" },
+    { kid:"Judd", sport:"baseball", date:"2026-03-30", time:"17:45", opponent:"", location:"OVP"    },
+    { kid:"Judd", sport:"baseball", date:"2026-04-13", time:"17:45", opponent:"", location:"Bogart" },
+    { kid:"Judd", sport:"baseball", date:"2026-04-16", time:"17:45", opponent:"", location:"Bogart" },
+    { kid:"Judd", sport:"baseball", date:"2026-04-21", time:"17:45", opponent:"", location:"Bogart" },
+    { kid:"Judd", sport:"baseball", date:"2026-04-25", time:"12:00", opponent:"", location:"OVP"    },
+    { kid:"Judd", sport:"baseball", date:"2026-04-30", time:"17:45", opponent:"", location:"Bogart" },
+    { kid:"Judd", sport:"baseball", date:"2026-05-02", time:"11:00", opponent:"", location:"Bogart" },
+    { kid:"Judd", sport:"baseball", date:"2026-05-06", time:"17:45", opponent:"", location:"OVP"    },
+    { kid:"Judd", sport:"baseball", date:"2026-05-09", time:"10:00", opponent:"", location:"Bogart" },
+    // ── Jack (Badgers – U8 Boys Soccer) ──
+    { kid:"Jack", sport:"soccer", date:"2026-03-17", time:"18:00", opponent:"Panthers", location:"OVP - C4" },
+    { kid:"Jack", sport:"soccer", date:"2026-03-28", time:"11:30", opponent:"Wildcats", location:"OVP - C3" },
+    { kid:"Jack", sport:"soccer", date:"2026-03-31", time:"18:00", opponent:"Vipers",   location:"OVP - C8" },
+    { kid:"Jack", sport:"soccer", date:"2026-04-14", time:"18:00", opponent:"Tigers",   location:"OVP - C3" },
+    { kid:"Jack", sport:"soccer", date:"2026-04-21", time:"18:00", opponent:"Buckeyes", location:"OVP - C3" },
+    { kid:"Jack", sport:"soccer", date:"2026-04-28", time:"18:00", opponent:"Wolves",   location:"HCM - 4C" },
+    { kid:"Jack", sport:"soccer", date:"2026-05-05", time:"18:00", opponent:"Bears",    location:"OVP - C4" },
+  ]
+};
+
+const SPECIAL_DAYS = {
+  "Spring 2026": [
+    { date:"2026-04-05", label:"Easter",       type:"holiday" },
+    { date:"2026-04-06", label:"Spring Break", type:"break"   },
+    { date:"2026-04-07", label:"Spring Break", type:"break"   },
+    { date:"2026-04-08", label:"Spring Break", type:"break"   },
+    { date:"2026-04-09", label:"Spring Break", type:"break"   },
+    { date:"2026-04-10", label:"Spring Break", type:"break"   },
+  ]
+};
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let currentView   = 'calendar';
+let currentSeason = Object.keys(SEASONS)[0];
+let calMonth      = null;
+let activeKids    = new Set();
+let activeSports  = new Set();
+
+function filtersActive() { return activeKids.size > 0 || activeSports.size > 0; }
+
+// A game matches the kid filter if:
+//   - no kid filter active, OR
+//   - the game's kids[] array contains a selected kid, OR
+//   - the game's kid string matches directly
+function gameMatchesKids(g) {
+  if (!activeKids.size) return true;
+  if (g.kids) return g.kids.some(k => activeKids.has(k));
+  return activeKids.has(g.kid);
+}
+
+function getGames() {
+  return (SEASONS[currentSeason] || []).filter(g => {
+    if (!gameMatchesKids(g)) return false;
+    if (activeSports.size && !activeSports.has(g.sport)) return false;
+    return true;
+  });
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+function init() {
+  const sel = document.getElementById('seasonSelect');
+  Object.keys(SEASONS).forEach(s => {
+    const o = document.createElement('option');
+    o.value = s; o.textContent = s; sel.appendChild(o);
+  });
+  sel.addEventListener('change', () => {
+    currentSeason = sel.value; calMonth = null;
+    activeKids.clear(); activeSports.clear();
+    buildFilters(); render();
+  });
+  setInitialMonth(); buildFilters(); render();
+}
+
+function setInitialMonth() {
+  const games = SEASONS[currentSeason];
+  if (!games || !games.length) { const n = new Date(); calMonth = { year: n.getFullYear(), month: n.getMonth() }; return; }
+  const today  = toDateStr(new Date());
+  const sorted = [...games].sort((a,b) => a.date.localeCompare(b.date));
+  const target = sorted.find(g => g.date >= today) || sorted[0];
+  const d = new Date(target.date + 'T12:00:00');
+  calMonth = { year: d.getFullYear(), month: d.getMonth() };
+}
+
+function toDateStr(d) { return d.toISOString().slice(0, 10); }
+
+// ═══════════════════════════════════════
+//  FILTERS
+// ═══════════════════════════════════════
+function buildFilters() {
+  const games  = SEASONS[currentSeason] || [];
+  // Expand kids[] for filter chip generation
+  const kidSet = new Set();
+  games.forEach(g => { (g.kids || [g.kid]).forEach(k => kidSet.add(k)); });
+  const kids   = [...kidSet].sort();
+  const sports = [...new Set(games.map(g => g.sport))].sort();
+
+  const bar = document.getElementById('filtersBar');
+  bar.innerHTML = '<span class="filter-label">Filter:</span>';
+
+  sports.forEach(s => {
+    const c = document.createElement('button');
+    c.className = `chip ${s}${activeSports.has(s) ? ' active' : ''}`;
+    c.textContent = s === 'soccer' ? '⚽ Soccer' : s === 'baseball' ? '⚾ Baseball' : '🎭 Event';
+    c.onclick = () => { toggleFilter(activeSports, s, c, true); updateReset(); };
+    bar.appendChild(c);
+  });
+
+  if (kids.length > 1) {
+    const sep = document.createElement('span'); sep.className = 'filter-sep'; bar.appendChild(sep);
+    kids.forEach(k => {
+      const c = document.createElement('button');
+      c.className = `chip${activeKids.has(k) ? ' active' : ''}`;
+      c.textContent = k;
+      c.onclick = () => { toggleFilter(activeKids, k, c, false); updateReset(); };
+      bar.appendChild(c);
+    });
+  }
+
+  const rb = document.createElement('button');
+  rb.id = 'resetBtn';
+  rb.innerHTML = '✕ Reset';
+  rb.className = `reset-btn${filtersActive() ? ' visible' : ''}`;
+  rb.onclick = resetFilters;
+  bar.appendChild(rb);
+}
+
+function updateReset() {
+  const b = document.getElementById('resetBtn');
+  if (b) b.classList.toggle('visible', filtersActive());
+}
+
+function resetFilters() { activeKids.clear(); activeSports.clear(); buildFilters(); render(); }
+
+function toggleFilter(set, val, btn, isSport) {
+  if (set.has(val)) { set.delete(val); btn.classList.remove('active'); if (isSport) btn.classList.remove(val); }
+  else              { set.add(val);    btn.classList.add('active');    if (isSport) btn.classList.add(val); }
+  render();
+}
+
+// ═══════════════════════════════════════
+//  VIEW / RENDER
+// ═══════════════════════════════════════
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.view-btn').forEach((b, i) =>
+    b.classList.toggle('active', (i === 0 && v === 'calendar') || (i === 1 && v === 'list')));
+  render();
+}
+function render() { currentView === 'calendar' ? renderCalendar() : renderList(); }
+
+// ═══════════════════════════════════════
+//  CALENDAR
+// ═══════════════════════════════════════
+function renderCalendar() {
+  const main  = document.getElementById('main');
+  const games = getGames();
+  const { year, month } = calMonth;
+
+  const byDate = {};
+  games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
+
+  const specialByDate = {};
+  (SPECIAL_DAYS[currentSeason] || []).forEach(s => { specialByDate[s.date] = s; });
+
+  const firstDay    = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const monthName   = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+  const todayStr    = toDateStr(new Date());
+  const hasPlayoffs = games.some(g => g.playoff);
+  const hasEvents   = games.some(g => g.sport === 'event');
+
+  let h = `
+  <div class="legend">
+    <span class="legend-label">Sport:</span>
+    <span class="legend-item"><span class="legend-dot soccer"></span> Soccer</span>
+    <span class="legend-item"><span class="legend-dot baseball"></span> Baseball</span>
+    ${hasPlayoffs ? '<span class="legend-item"><span class="legend-dot playoff"></span> Playoff</span>' : ''}
+    ${hasEvents   ? '<span class="legend-item"><span class="legend-dot event"></span> Event</span>'   : ''}
+  </div>
+  <div class="month-header">
+    <h2 class="month-name">${monthName}</h2>
+    <div class="nav-btns">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+      <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
+    </div>
+  </div>
+  <div class="cal-grid">
+    <div class="cal-day-name">Sun</div><div class="cal-day-name">Mon</div>
+    <div class="cal-day-name">Tue</div><div class="cal-day-name">Wed</div>
+    <div class="cal-day-name">Thu</div><div class="cal-day-name">Fri</div>
+    <div class="cal-day-name">Sat</div>`;
+
+  for (let i = 0; i < firstDay; i++) h += `<div class="cal-cell empty"></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dg = byDate[ds] || [];
+    const sp = specialByDate[ds];
+    const isBreak   = sp && sp.type === 'break';
+    const isHoliday = sp && sp.type === 'holiday';
+
+    let cellCls = 'cal-cell';
+    if (ds === todayStr) cellCls += ' today';
+    if (isBreak)         cellCls += ' spring-break';
+
+    h += `<div class="${cellCls}"><span class="day-num">${d}</span>`;
+
+    if (sp) {
+      const icon = isHoliday ? '🐣 ' : '';
+      h += `<div class="special-label ${sp.type}">${icon}${sp.label}</div>`;
+    }
+
+    dg.slice(0, 2).forEach(g => {
+      const cls = g.playoff ? 'playoff' : g.sport;
+      h += `<div class="cal-event ${cls}" onclick='openModal(${JSON.stringify(JSON.stringify(g))})'>${g.playoff ? '🏆 ' : ''}${formatTime(g.time)} ${g.kid}</div>`;
+    });
+
+    if (dg.length > 2) h += `<div class="more-events" onclick="setView('list')">+${dg.length - 2} more</div>`;
+    h += `</div>`;
+  }
+
+  h += `</div>`;
+  main.innerHTML = h;
+}
+
+function changeMonth(dir) {
+  let { year, month } = calMonth;
+  month += dir;
+  if (month < 0)  { month = 11; year--; }
+  if (month > 11) { month = 0;  year++; }
+  calMonth = { year, month };
+  renderCalendar();
+}
+
+// ═══════════════════════════════════════
+//  LIST
+// ═══════════════════════════════════════
+function renderList() {
+  const main  = document.getElementById('main');
+  const games = getGames();
+
+  if (!games.length) {
+    main.innerHTML = `<div class="empty-state"><div class="big-icon">📭</div><h3>No games found</h3><p>Try adjusting your filters above.</p></div>`;
+    return;
+  }
+
+  const sorted = [...games].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  const byDate = {}, dateOrder = [];
+  sorted.forEach(g => {
+    if (!byDate[g.date]) { byDate[g.date] = []; dateOrder.push(g.date); }
+    byDate[g.date].push(g);
+  });
+
+  const today       = toDateStr(new Date());
+  const hasPlayoffs = games.some(g => g.playoff);
+  const hasEvents   = games.some(g => g.sport === 'event');
+  const pastDates   = dateOrder.filter(ds => ds < today);
+  const futureDates = dateOrder.filter(ds => ds >= today);
+
+  let h = `<div class="legend">
+    <span class="legend-label">Sport:</span>
+    <span class="legend-item"><span class="legend-dot soccer"></span> Soccer</span>
+    <span class="legend-item"><span class="legend-dot baseball"></span> Baseball</span>
+    ${hasPlayoffs ? '<span class="legend-item"><span class="legend-dot playoff"></span> Playoff</span>' : ''}
+    ${hasEvents   ? '<span class="legend-item"><span class="legend-dot event"></span> Event</span>'   : ''}
+  </div>`;
+
+  if (pastDates.length) {
+    const label = `${pastDates.length} past game date${pastDates.length > 1 ? 's' : ''}`;
+    h += `<div id="pastToggle" class="past-toggle" onclick="togglePast()">
+      <span id="pastToggleIcon">▸</span>
+      <span id="pastToggleLabel">${label} — tap to show</span>
+    </div>
+    <div id="pastGames" style="display:none">`;
+    pastDates.forEach(ds => { h += buildDateSection(ds, byDate[ds], true); });
+    h += `</div>`;
+  }
+
+  h += `<div id="upcoming-anchor"></div>`;
+  futureDates.forEach(ds => { h += buildDateSection(ds, byDate[ds], false); });
+
+  main.innerHTML = h;
+
+  const anchor = document.getElementById('upcoming-anchor');
+  if (anchor && futureDates.length) {
+    setTimeout(() => {
+      const top = anchor.getBoundingClientRect().top + window.scrollY - 90;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }, 50);
+  }
+}
+
+function buildDateSection(ds, games, isPast) {
+  const d       = new Date(ds + 'T12:00:00');
+  const weekday = d.toLocaleString('default', { weekday: 'long' });
+  const dlabel  = d.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+  let h = `<div class="list-section" style="${isPast ? 'opacity:0.45' : ''}">
+    <div class="list-date-header"><span class="weekday">${weekday}</span> · ${dlabel}</div>`;
+  games.forEach(g => {
+    const icon    = g.sport === 'soccer' ? '⚽' : g.sport === 'baseball' ? '⚾' : '🎭';
+    const cardCls = g.playoff ? `${g.sport} playoff` : g.sport;
+    h += `<div class="game-card ${cardCls}" onclick='openModal(${JSON.stringify(JSON.stringify(g))})'>
+      <div class="sport-icon">${g.playoff ? '🏆' : icon}</div>
+      <div class="game-info">
+        <div class="game-who"><strong>${g.kid}</strong>${g.opponent ? ` <span class="vs">vs ${g.opponent}</span>` : ''}</div>
+        <div class="game-meta">
+          <span>📍 ${g.location}</span>
+          ${g.playoff ? '<span class="playoff-badge">🏆 Playoff</span>' : ''}
+        </div>
+      </div>
+      <div class="game-time-badge">${formatTime(g.time)}</div>
+    </div>`;
+  });
+  h += `</div>`;
+  return h;
+}
+
+function togglePast() {
+  const el   = document.getElementById('pastGames');
+  const icon = document.getElementById('pastToggleIcon');
+  const lbl  = document.getElementById('pastToggleLabel');
+  const open = el.style.display === 'block';
+  el.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '▸' : '▾';
+  const count = el.querySelectorAll('.list-section').length;
+  lbl.textContent = open
+    ? `${count} past game date${count > 1 ? 's' : ''} — tap to show`
+    : `past games — tap to hide`;
+}
+
+// ═══════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════
+function openModal(json) {
+  const g          = JSON.parse(json);
+  const icon       = g.sport === 'soccer' ? '⚽' : g.sport === 'baseball' ? '⚾' : '🎭';
+  const sportLabel = g.sport === 'soccer' ? 'Soccer' : g.sport === 'baseball' ? 'Baseball' : 'Event';
+  const d          = new Date(g.date + 'T12:00:00');
+  const dateStr    = d.toLocaleString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('modalBar').className   = `modal-sport-bar ${g.playoff ? 'playoff' : g.sport}`;
+  document.getElementById('modalTitle').innerHTML =
+    `${g.kid} ${icon}${g.playoff ? ' <span class="playoff-badge">🏆 Playoff</span>' : ''}`;
+  document.getElementById('modalSport').textContent = sportLabel;
+  document.getElementById('modalBody').innerHTML  = `
+    <div class="modal-detail"><span class="icon">🗓️</span><span>${dateStr}</span></div>
+    <div class="modal-detail"><span class="icon">⏰</span><span>${formatTime(g.time)}</span></div>
+    ${g.opponent ? `<div class="modal-detail"><span class="icon">🆚</span><span>vs ${g.opponent}</span></div>` : ''}
+    <div class="modal-detail"><span class="icon">📍</span><span>${g.location}</span></div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay') && !e.target.classList.contains('modal-close')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal({}); });
+
+function formatTime(t) {
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+init();
+</script>
+</body>
+</html>

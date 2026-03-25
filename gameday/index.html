@@ -545,7 +545,7 @@ function renderCalendar() {
       h += `<div class="cal-event ${cls}" onclick='event.stopPropagation();openModal(${JSON.stringify(JSON.stringify(g))})'>${g.playoff ? '🏆 ' : ''}${formatTime(g.time)} ${g.kid}</div>`;
     });
 
-    if (dg.length > 2) h += `<div class="more-events" onclick="event.stopPropagation();setView('list')">+${dg.length - 2} more</div>`;
+    if (dg.length > 2) h += `<div class="more-events" onclick="event.stopPropagation();handleCellClick('${ds}')">+${dg.length - 2} more</div>`;
     h += `</div>`;
   }
 
@@ -730,7 +730,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal
 //  DAY BOTTOM SHEET (mobile)
 // ═══════════════════════════════════════
 function handleCellClick(ds) {
-  if (window.innerWidth > 640) return;
   const games = getGames().filter(g => g.date === ds);
   if (!games.length) return;
   const d = new Date(ds + 'T12:00:00');

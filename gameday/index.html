@@ -189,6 +189,9 @@
   .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text); }
   .empty-state p { font-size: 0.9rem; }
 
+  /* ── CALENDAR GRID WRAP (for span overlays) ── */
+  .cal-grid-wrap { position: relative; }
+
   /* ── CALENDAR DOTS ── */
   .cal-dots { display: none; }
   .cal-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
@@ -222,7 +225,7 @@
 
 <header>
   <div class="header-inner">
-    <div class="site-title" onclick="resetToHome()">⚾⚽ Family <span>GameDay</span></div>
+    <div class="site-title" onclick="resetToHome()">⚾⚽ Raymond <span>GameDay</span></div>
     <div class="header-controls">
       <select id="seasonSelect"></select>
       <div class="view-toggle">
@@ -308,11 +311,7 @@ const SEASONS = {
 const SPECIAL_DAYS = {
   "Spring 2026": [
     { date:"2026-04-05", label:"Easter",       type:"holiday" },
-    { date:"2026-04-06", label:"Spring Break", type:"break"   },
-    { date:"2026-04-07", label:"Spring Break", type:"break"   },
-    { date:"2026-04-08", label:"Spring Break", type:"break"   },
-    { date:"2026-04-09", label:"Spring Break", type:"break"   },
-    { date:"2026-04-10", label:"Spring Break", type:"break"   },
+    { date:"2026-04-06", endDate:"2026-04-10", label:"Spring Break", type:"break" },
   ]
 };
 
@@ -372,7 +371,7 @@ function setInitialMonth() {
   calMonth = { year: d.getFullYear(), month: d.getMonth() };
 }
 
-function toDateStr(d) { return d.toISOString().slice(0, 10); }
+function toDateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
 // ═══════════════════════════════════════
 //  FILTERS
@@ -458,8 +457,25 @@ function renderCalendar() {
   const byDate = {};
   games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
 
-  const specialByDate = {};
-  (SPECIAL_DAYS[currentSeason] || []).forEach(s => { specialByDate[s.date] = s; });
+  // Build per-date coverage map; multi-day entries get a spanId for overlay rendering
+  const spanCoverage = {};
+  let _sid = 0;
+  (SPECIAL_DAYS[currentSeason] || []).forEach(s => {
+    const id = _sid++;
+    if (!s.endDate) {
+      spanCoverage[s.date] = { label: s.label, type: s.type, isStart: true, isEnd: true, single: true, spanId: id };
+    } else {
+      let cur = new Date(s.date + 'T12:00:00');
+      const end = new Date(s.endDate + 'T12:00:00');
+      let first = true;
+      while (cur <= end) {
+        const ds = toDateStr(cur);
+        spanCoverage[ds] = { label: s.label, type: s.type, isStart: first, isEnd: ds === s.endDate, single: false, spanId: id };
+        first = false;
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+  });
 
   const firstDay    = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -483,7 +499,7 @@ function renderCalendar() {
       <button class="nav-btn" onclick="changeMonth(1)">&#8250;</button>
     </div>
   </div>
-  <div class="cal-grid">
+  <div class="cal-grid-wrap"><div class="cal-grid">
     <div class="cal-day-name">Sun</div><div class="cal-day-name">Mon</div>
     <div class="cal-day-name">Tue</div><div class="cal-day-name">Wed</div>
     <div class="cal-day-name">Thu</div><div class="cal-day-name">Fri</div>
@@ -494,7 +510,7 @@ function renderCalendar() {
   for (let d = 1; d <= daysInMonth; d++) {
     const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const dg = byDate[ds] || [];
-    const sp = specialByDate[ds];
+    const sp = spanCoverage[ds];
     const isBreak   = sp && sp.type === 'break';
     const isHoliday = sp && sp.type === 'holiday';
 
@@ -503,10 +519,18 @@ function renderCalendar() {
     if (isBreak)         cellCls += ' spring-break';
     if (dg.length > 0)   cellCls += ' has-games';
 
-    const cellClick = dg.length > 0 ? ` onclick="handleCellClick('${ds}')"` : '';
-    h += `<div class="${cellCls}"${cellClick}><span class="day-num">${d}</span>`;
+    // Data attrs for multi-day span overlay (start/end cells only)
+    let spanAttrs = '';
+    if (sp && !sp.single) {
+      if (sp.isStart) spanAttrs += ` data-span-id="${sp.spanId}" data-span-label="${sp.label}" data-span-type="${sp.type}"`;
+      if (sp.isEnd)   spanAttrs += ` data-span-end="${sp.spanId}"`;
+    }
 
-    if (sp) {
+    const cellClick = dg.length > 0 ? ` onclick="handleCellClick('${ds}')"` : '';
+    h += `<div class="${cellCls}"${cellClick}${spanAttrs}><span class="day-num">${d}</span>`;
+
+    if (sp && sp.single) {
+      // Single-day event: render label inline as before
       const icon = isHoliday ? '🐣 ' : '';
       h += `<div class="special-label ${sp.type}">${icon}${sp.label}</div>`;
     }
@@ -525,8 +549,45 @@ function renderCalendar() {
     h += `</div>`;
   }
 
-  h += `</div>`;
+  h += `</div></div>`; // close cal-grid + cal-grid-wrap
   main.innerHTML = h;
+  requestAnimationFrame(attachSpanLabels);
+}
+
+function attachSpanLabels() {
+  const wrap = document.querySelector('.cal-grid-wrap');
+  if (!wrap) return;
+  // Remove any stale overlays from previous render
+  wrap.querySelectorAll('.span-overlay').forEach(el => el.remove());
+
+  const wrapRect = wrap.getBoundingClientRect();
+  wrap.querySelectorAll('[data-span-id]').forEach(startCell => {
+    const spanId  = startCell.dataset.spanId;
+    const label   = startCell.dataset.spanLabel;
+    const type    = startCell.dataset.spanType;
+    const endCell = wrap.querySelector(`[data-span-end="${spanId}"]`) || startCell;
+
+    const sr = startCell.getBoundingClientRect();
+    const er = endCell.getBoundingClientRect();
+    const pl = parseFloat(getComputedStyle(startCell).paddingLeft);
+    const pt = parseFloat(getComputedStyle(startCell).paddingTop);
+    const dayNumH = (startCell.querySelector('.day-num')?.getBoundingClientRect().height ?? 14) + 2;
+
+    // If start and end are on the same row, draw one spanning bar;
+    // otherwise just span to the end of the start row.
+    const sameRow  = Math.abs(sr.top - er.top) < 10;
+    const rightEdge = sameRow ? er.right : sr.right + sr.width * 6; // fallback: rest of row
+
+    const el = document.createElement('div');
+    el.className = `special-label ${type} span-overlay`;
+    el.textContent = label;
+    el.style.cssText =
+      `position:absolute;pointer-events:none;z-index:2;box-sizing:border-box;` +
+      `left:${sr.left - wrapRect.left + pl}px;` +
+      `top:${sr.top - wrapRect.top + pt + dayNumH}px;` +
+      `width:${rightEdge - sr.left - pl - 3}px;`;
+    wrap.appendChild(el);
+  });
 }
 
 function changeMonth(dir) {

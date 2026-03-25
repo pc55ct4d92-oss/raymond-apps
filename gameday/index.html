@@ -217,6 +217,8 @@
     .more-events { display: none; }
     .cal-dots { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
     .special-label { font-size: 0.58rem; }
+    .special-label.holiday { cursor: pointer; }
+    .special-label.holiday .special-text { display: none; }
     .site-title { font-size: 1.2rem; }
   }
 </style>
@@ -531,8 +533,11 @@ function renderCalendar() {
 
     if (sp && sp.single) {
       // Single-day event: render label inline as before
-      const icon = isHoliday ? '🐣 ' : '';
-      h += `<div class="special-label ${sp.type}">${icon}${sp.label}</div>`;
+      if (isHoliday) {
+        h += `<div class="special-label holiday" onclick="openHolidaySheet('${sp.label}')">🐣<span class="special-text"> ${sp.label}</span></div>`;
+      } else {
+        h += `<div class="special-label ${sp.type}">${sp.label}</div>`;
+      }
     }
 
     if (dg.length > 0) {
@@ -750,6 +755,14 @@ function handleCellClick(ds) {
       <div class="game-time-badge">${formatTime(g.time)}</div>
     </div>`;
   }).join('');
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function openHolidaySheet(label) {
+  if (window.innerWidth > 640) return;
+  document.getElementById('sheetDate').textContent = '🐣 ' + label;
+  document.getElementById('sheetGames').innerHTML = '';
   document.getElementById('sheetOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }

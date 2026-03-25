@@ -718,9 +718,83 @@ function openModal(json) {
     <div class="modal-detail"><span class="icon">⏰</span><span>${formatTime(g.time)}</span></div>
     ${g.opponent ? `<div class="modal-detail"><span class="icon">🆚</span><span>vs ${g.opponent}</span></div>` : ''}
     <div class="modal-detail"><span class="icon">📍</span><span>${g.location}</span></div>
+    <div class="modal-detail" id="weatherRow" style="display:none">
+      <span class="icon">🌡️</span><span id="weatherText" style="color:var(--text-mid);font-size:0.85rem">fetching forecast…</span>
+    </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+  fetchWeather(g.date, g.time, g.location);
+}
+
+// ═══════════════════════════════════════
+//  WEATHER (Open-Meteo)
+// ═══════════════════════════════════════
+const LOCATION_COORDS = {
+  'OVP':    [33.8557, -83.4418],
+  'Bogart': [33.9454, -83.5274],
+  'HCM':    [33.8560, -83.4420],
+};
+const DEFAULT_COORDS = LOCATION_COORDS['OVP'];
+
+function coordsForLocation(loc) {
+  if (!loc) return DEFAULT_COORDS;
+  for (const [key, val] of Object.entries(LOCATION_COORDS)) {
+    if (loc.includes(key)) return val;
+  }
+  return DEFAULT_COORDS;
+}
+
+function wmoToCondition(code) {
+  if (code === 0)                         return ['☀️',  'Clear'];
+  if (code <= 3)                          return ['🌤️', 'Partly Cloudy'];
+  if (code <= 48)                         return ['☁️',  'Cloudy'];
+  if (code <= 67)                         return ['🌧️', 'Rain'];
+  if (code <= 77)                         return ['🌨️', 'Snow'];
+  if (code <= 82)                         return ['🌦️', 'Showers'];
+  if (code >= 95)                         return ['⛈️',  'Thunderstorm'];
+  return ['🌡️', ''];
+}
+
+async function fetchWeather(date, time, location) {
+  const weatherRow  = document.getElementById('weatherRow');
+  const weatherText = document.getElementById('weatherText');
+  if (!weatherRow || !weatherText) return;
+
+  // Only forecast within 16 days
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const gameDate = new Date(date + 'T00:00:00');
+  const diffDays = (gameDate - today) / 86400000;
+  if (diffDays < 0 || diffDays > 15) return;
+
+  weatherRow.style.display = '';
+
+  const [lat, lon] = coordsForLocation(location);
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+    `&hourly=temperature_2m,precipitation_probability,weathercode` +
+    `&temperature_unit=fahrenheit&timezone=America%2FNew_York&forecast_days=16`;
+
+  try {
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('bad response');
+    const data = await res.json();
+
+    // Match game time to closest hour index
+    const [hh, mm] = (time || '12:00').split(':').map(Number);
+    const targetHour = date + 'T' + String(hh).padStart(2,'0') + ':00';
+    const idx = data.hourly.time.indexOf(targetHour);
+    if (idx === -1) { weatherRow.style.display = 'none'; return; }
+
+    const temp  = Math.round(data.hourly.temperature_2m[idx]);
+    const prob  = data.hourly.precipitation_probability[idx] ?? 0;
+    const code  = data.hourly.weathercode[idx];
+    const [emoji, label] = wmoToCondition(code);
+
+    weatherText.style.color = '';
+    weatherText.textContent = `${emoji} ${temp}°F · ${label} · ${prob}% rain chance`;
+  } catch {
+    weatherRow.style.display = 'none';
+  }
 }
 
 function closeModal(e) {

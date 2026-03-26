@@ -287,6 +287,19 @@ const SEASONS = {
     { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-04-16", time:"19:15", opponent:"Mystics", location:"OVP - B1" },
     { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-04-23", time:"19:15", opponent:"Comets",  location:"OVP - B1" },
     { kid:"Shea & Lucy", kids:["Shea","Lucy"], sport:"soccer", date:"2026-04-30", time:"18:00", opponent:"Aces",    location:"OVP - B3" },
+    // ── Henry & Sam (Porky Goodness – 2026 Spring Minors Baseball) ──
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-03-21", time:"13:00", opponent:"Blount Heating & Cooling - Strong", location:"Holland Park / Field 3" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-03-24", time:"19:00", opponent:"Aegis IT - Cowert",                  location:"Holland Park / Field 1" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-03-26", time:"19:00", opponent:"Massey Law - Massey",                 location:"Holland Park / Field 1" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-03-31", time:"19:00", opponent:"Junk South - Hosey/Singh",            location:"Holland Park / Field 1" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-04-14", time:"18:30", opponent:"Northeast Sales - Katz",              location:"Holland Park / Field 3" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-04-16", time:"17:30", opponent:"Marine Corps - McClain",              location:"Holland Park / Field 1" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-04-21", time:"18:30", opponent:"Blount Heating & Cooling - Strong",   location:"Holland Park / Field 3" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-04-23", time:"18:30", opponent:"Aegis IT - Cowert",                   location:"Holland Park / Field 3" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-04-28", time:"19:00", opponent:"Massey Law - Massey",                 location:"Holland Park / Field 1" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-04-30", time:"17:30", opponent:"Junk South - Hosey/Singh",            location:"Holland Park / Field 1" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-05-07", time:"18:30", opponent:"Northeast Sales - Katz",              location:"Holland Park / Field 3" },
+    { kid:"Henry & Sam", kids:["Henry","Sam"], sport:"baseball", date:"2026-05-12", time:"18:30", opponent:"Marine Corps - McClain",              location:"Holland Park / Field 3" },
     // ── Judd (Baseball) ──
     { kid:"Judd", sport:"baseball", date:"2026-03-25", time:"17:45", opponent:"", location:"OVP"    },
     { kid:"Judd", sport:"baseball", date:"2026-03-28", time:"10:00", opponent:"", location:"Bogart" },
@@ -731,9 +744,10 @@ function openModal(json) {
 //  WEATHER (Open-Meteo)
 // ═══════════════════════════════════════
 const LOCATION_COORDS = {
-  'OVP':    [33.8557, -83.4418],
-  'Bogart': [33.9454, -83.5274],
-  'HCM':    [33.8560, -83.4420],
+  'OVP':         [33.8557, -83.4418],
+  'Bogart':      [33.9454, -83.5274],
+  'HCM':         [33.8560, -83.4420],
+  'Holland Park':[34.0012, -83.4047],
 };
 const DEFAULT_COORDS = LOCATION_COORDS['OVP'];
 

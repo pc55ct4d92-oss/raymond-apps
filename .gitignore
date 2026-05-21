@@ -1,0 +1,9 @@
+.claude/
+node_modules/
+dist/
+
+# Nested independent repos
+gaffer/
+horizon/
+morning/backend/
+morning/frontend/

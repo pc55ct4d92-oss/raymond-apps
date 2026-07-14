@@ -11,12 +11,18 @@
 ## Project structure
 - `frontend/` — React + Vite → Vercel
 - `backend/` — Node.js + Express → Railway
-- `backend/` has its own git repo (separate from the parent raymond-apps repo)
+- `frontend/` and `backend/` are each their own git repos (the parent raymond-apps repo ignores both)
+
+## API auth
+- `/api/*` requires an `X-Api-Key` header matching the `API_KEY` env var — but only when `API_KEY` is set on the backend (Railway). Frontend sends it from `VITE_API_KEY` (Vercel env var, baked in at build time)
+- The same key value must be set in Railway (`API_KEY`), Vercel (`VITE_API_KEY`), `backend/.env`, and `frontend/.env.local`
+- If the frontend suddenly shows everything as unavailable after a deploy, check that both env vars still match
 
 ## Known issues / gotchas
 
 ### USCCB daily readings parsing (`backend/routes/missal.js`)
 - Readings are fetched from the USCCB daily email via Gmail API
+- `/api/missal?date=YYYY-MM-DD` serves the archive (up to 6 days back) by matching the email whose Gmail internalDate falls on that ET date
 - USCCB has used both Roman numerals (`Reading I`) and digits (`Reading 1`) for reading labels — both are handled
 - USCCB has used `"Responsorial Psalm"`, `"Responsorial"`, and bare `"Psalm"` for the psalm label — all handled via `startsWith('responsorial')` or `startsWith('psalm')` (case-insensitive)
 - If a reading stops showing, check Railway logs for `h4:` debug output to see what label format the email is using

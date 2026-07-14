@@ -18,6 +18,9 @@
 - The same key value must be set in Railway (`API_KEY`), Vercel (`VITE_API_KEY`), `backend/.env`, and `frontend/.env.local`
 - If the frontend suddenly shows everything as unavailable after a deploy, check that both env vars still match
 
+## Dev tooling
+- For browser screenshots/testing, use Playwright — chromium-cli isn't available locally
+
 ## Known issues / gotchas
 
 ### USCCB daily readings parsing (`backend/routes/missal.js`)
